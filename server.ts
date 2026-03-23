@@ -290,6 +290,18 @@ async function startServer() {
   const authenticateToken = (req: any, res: any, next: any) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
+
+    // Bypass for production demo if requested
+    if (process.env.NODE_ENV === 'production' && token === 'demo-token') {
+      req.user = { 
+        id: 0, 
+        email: 'demo@nexus.erp', 
+        role: 'Admin', 
+        permissions: JSON.stringify(['dashboard', 'inventory', 'sales', 'purchase', 'production', 'reports', 'master', 'admin', 'settings']) 
+      };
+      return next();
+    }
+
     if (!token) return res.sendStatus(401);
 
     jwt.verify(token, JWT_SECRET, (err: any, user: any) => {

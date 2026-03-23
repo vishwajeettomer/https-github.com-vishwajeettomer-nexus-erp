@@ -19,10 +19,12 @@ import {
   Percent,
   Scale,
   Wallet,
-  IndianRupee
+  IndianRupee,
+  Users,
+  Truck
 } from 'lucide-react';
 
-type MasterType = 'items' | 'bom' | 'accounts' | 'taxes' | 'countries' | 'states' | 'cities' | 'units';
+type MasterType = 'items' | 'bom' | 'customers' | 'suppliers' | 'accounts' | 'taxes' | 'countries' | 'states' | 'cities' | 'units';
 
 export default function Master() {
   const [activeSubTab, setActiveSubTab] = useState<MasterType>('items');
@@ -30,6 +32,8 @@ export default function Master() {
   const tabs: { id: MasterType; label: string; icon: any }[] = [
     { id: 'items', label: 'Items', icon: Package },
     { id: 'bom', label: 'BOM', icon: Layers },
+    { id: 'customers', label: 'Customers', icon: Users },
+    { id: 'suppliers', label: 'Suppliers', icon: Truck },
     { id: 'accounts', label: 'Accounts', icon: Wallet },
     { id: 'taxes', label: 'Taxes', icon: Percent },
     { id: 'units', label: 'Units', icon: Scale },
@@ -68,6 +72,18 @@ export default function Master() {
       <div className="mt-6">
         {activeSubTab === 'items' && <ItemMaster />}
         {activeSubTab === 'bom' && <BOMMaster />}
+        {activeSubTab === 'customers' && <GenericMaster endpoint="/customers" title="Customer" fields={[
+          { name: 'name', label: 'Customer Name', type: 'text', required: true },
+          { name: 'email', label: 'Email', type: 'email' },
+          { name: 'phone', label: 'Phone', type: 'text' },
+          { name: 'address', label: 'Address', type: 'text' }
+        ]} />}
+        {activeSubTab === 'suppliers' && <GenericMaster endpoint="/suppliers" title="Supplier" fields={[
+          { name: 'name', label: 'Supplier Name', type: 'text', required: true },
+          { name: 'contact_person', label: 'Contact Person', type: 'text' },
+          { name: 'email', label: 'Email', type: 'email' },
+          { name: 'phone', label: 'Phone', type: 'text' }
+        ]} />}
         {activeSubTab === 'accounts' && <GenericMaster endpoint="/accounts" title="Account" fields={[
           { name: 'name', label: 'Account Name', type: 'text', required: true },
           { name: 'type', label: 'Account Type', type: 'select', options: [

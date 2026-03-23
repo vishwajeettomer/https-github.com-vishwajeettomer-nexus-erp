@@ -14,7 +14,7 @@ import { motion } from 'motion/react';
 export interface Field {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'date';
+  type: 'text' | 'number' | 'select' | 'date' | 'email' | 'password';
   options?: (string | { id: string | number; name: string })[];
   optionsEndpoint?: string;
   required?: boolean;
