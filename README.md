@@ -1,57 +1,11 @@
-# Nexus ERP - Production Ready Export
+<div align="center">
 
-This project is a full-stack ERP application built with React (Frontend) and Express (Backend).
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 
-## Prerequisites
+  <h1>Built with AI Studio</h2>
 
-Before you begin, ensure you have the following installed on your local machine:
+  <p>The fastest path from prompt to production with Gemini.</p>
 
-1. **Node.js** (v20 or higher recommended)
-2. **npm** (comes bundled with Node.js)
+  <a href="https://aistudio.google.com/apps">Start building</a>
 
-## Installation & Setup
-
-Follow these steps to get the application running locally:
-
-### 1. Extract the ZIP
-Extract the contents of the downloaded ZIP file into a folder on your computer.
-
-### 2. Install Dependencies
-Open a terminal (Command Prompt, PowerShell, or Terminal) in the project folder and run:
-```bash
-npm install
-```
-This will download all the necessary libraries into a `node_modules` folder.
-
-### 3. Build the Frontend
-Compile the React application for production:
-```bash
-npm run build
-```
-
-### 4. Start the Application
-Launch the server:
-```bash
-npm start
-```
-
-The application will be running at: **http://localhost:3000**
-
-## Project Structure
-
-- `server.ts`: The Express backend server and API endpoints.
-- `src/`: The React frontend source code.
-- `erp.db`: The SQLite database file (contains your master data).
-- `package.json`: Project configuration and dependency list.
-
-## Features Included
-
-- **Dashboard**: Real-time metrics and business overview.
-- **Inventory**: Stock management and low-stock alerts.
-- **Sales**: Order processing and customer management.
-- **Production**: Production orders and status tracking.
-- **Master Data**: 
-  - Item Master & BOM
-  - Accounts & Taxes
-  - Units, Country, State, and City masters.
-- **Authentication**: Secure login system with JWT.
+</div>
