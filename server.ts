@@ -52,7 +52,8 @@ async function startServer() {
       unit TEXT,
       price REAL DEFAULT 0,
       stock INTEGER DEFAULT 0,
-      min_stock INTEGER DEFAULT 10
+      min_stock INTEGER DEFAULT 10,
+      hsn_sac TEXT
     );
 
     CREATE TABLE IF NOT EXISTS customers (
@@ -60,7 +61,9 @@ async function startServer() {
       name TEXT NOT NULL,
       email TEXT,
       phone TEXT,
-      address TEXT
+      address TEXT,
+      state_id INTEGER,
+      FOREIGN KEY (state_id) REFERENCES states(id)
     );
 
     CREATE TABLE IF NOT EXISTS suppliers (
@@ -68,9 +71,29 @@ async function startServer() {
       name TEXT NOT NULL,
       contact_person TEXT,
       email TEXT,
-      phone TEXT
+      phone TEXT,
+      address TEXT,
+      state_id INTEGER,
+      FOREIGN KEY (state_id) REFERENCES states(id)
     );
+  `);
 
+  // Migration: Ensure state_id exists in customers and suppliers (for existing databases)
+  try {
+    await db.run('ALTER TABLE customers ADD COLUMN state_id INTEGER');
+  } catch (e) { /* Column might already exist */ }
+  try {
+    await db.run('ALTER TABLE suppliers ADD COLUMN state_id INTEGER');
+  } catch (e) { /* Column might already exist */ }
+
+  try {
+    await db.run('ALTER TABLE sale_schedules ADD COLUMN delivery_date DATE');
+  } catch (e) { /* Column might already exist */ }
+  try {
+    await db.run('ALTER TABLE purchase_schedules ADD COLUMN delivery_date DATE');
+  } catch (e) { /* Column might already exist */ }
+
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS sales (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER,
@@ -150,6 +173,12 @@ async function startServer() {
       short_name TEXT UNIQUE NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT
+    );
+
     CREATE TABLE IF NOT EXISTS gate_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       entry_no TEXT UNIQUE NOT NULL,
@@ -183,8 +212,37 @@ async function startServer() {
       date DATE NOT NULL,
       customer_id INTEGER,
       total_amount REAL DEFAULT 0,
+      discount_total REAL DEFAULT 0,
+      tax_total REAL DEFAULT 0,
+      cgst_total REAL DEFAULT 0,
+      sgst_total REAL DEFAULT 0,
+      igst_total REAL DEFAULT 0,
+      grand_total REAL DEFAULT 0,
+      order_effective_from DATE,
+      order_effective_till DATE,
+      amendment_date DATE,
+      amendment_effective_date DATE,
       status TEXT DEFAULT 'Pending',
       FOREIGN KEY (customer_id) REFERENCES customers(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS sale_order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sale_order_id INTEGER,
+      product_id INTEGER,
+      quantity REAL,
+      unit_price REAL,
+      discount REAL DEFAULT 0,
+      hsn_sac TEXT,
+      cgst_rate REAL DEFAULT 0,
+      sgst_rate REAL DEFAULT 0,
+      igst_rate REAL DEFAULT 0,
+      cgst_amount REAL DEFAULT 0,
+      sgst_amount REAL DEFAULT 0,
+      igst_amount REAL DEFAULT 0,
+      amount REAL,
+      FOREIGN KEY (sale_order_id) REFERENCES sale_orders(id),
+      FOREIGN KEY (product_id) REFERENCES products(id)
     );
 
     CREATE TABLE IF NOT EXISTS sale_schedules (
@@ -204,8 +262,37 @@ async function startServer() {
       date DATE NOT NULL,
       supplier_id INTEGER,
       total_amount REAL DEFAULT 0,
+      discount_total REAL DEFAULT 0,
+      tax_total REAL DEFAULT 0,
+      cgst_total REAL DEFAULT 0,
+      sgst_total REAL DEFAULT 0,
+      igst_total REAL DEFAULT 0,
+      grand_total REAL DEFAULT 0,
+      order_effective_from DATE,
+      order_effective_till DATE,
+      amendment_date DATE,
+      amendment_effective_date DATE,
       status TEXT DEFAULT 'Pending',
       FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS purchase_order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      purchase_order_id INTEGER,
+      product_id INTEGER,
+      quantity REAL,
+      unit_price REAL,
+      discount REAL DEFAULT 0,
+      hsn_sac TEXT,
+      cgst_rate REAL DEFAULT 0,
+      sgst_rate REAL DEFAULT 0,
+      igst_rate REAL DEFAULT 0,
+      cgst_amount REAL DEFAULT 0,
+      sgst_amount REAL DEFAULT 0,
+      igst_amount REAL DEFAULT 0,
+      amount REAL,
+      FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id),
+      FOREIGN KEY (product_id) REFERENCES products(id)
     );
 
     CREATE TABLE IF NOT EXISTS purchase_schedules (
@@ -258,10 +345,16 @@ async function startServer() {
       ['Hydraulic Pump', 'HYD-P', 'Machinery', 'pcs', 890, 12, 5]);
 
     // Sample Customers
-    await db.run('INSERT INTO customers (name, email, phone, address) VALUES (?, ?, ?, ?)',
-      ['Global Manufacturing Ltd', 'contact@globalmfg.com', '+123456789', '123 Industrial Way']);
-    await db.run('INSERT INTO customers (name, email, phone, address) VALUES (?, ?, ?, ?)',
-      ['Tech Solutions Inc', 'info@techsolutions.com', '+987654321', '456 Tech Park']);
+    await db.run('INSERT INTO customers (name, email, phone, address, state_id) VALUES (?, ?, ?, ?, ?)',
+      ['Global Manufacturing Ltd', 'contact@globalmfg.com', '+123456789', '123 Industrial Way', 1]);
+    await db.run('INSERT INTO customers (name, email, phone, address, state_id) VALUES (?, ?, ?, ?, ?)',
+      ['Tech Solutions Inc', 'info@techsolutions.com', '+987654321', '456 Tech Park', 2]);
+
+    // Sample Suppliers
+    await db.run('INSERT INTO suppliers (name, contact_person, email, phone, address, state_id) VALUES (?, ?, ?, ?, ?, ?)',
+      ['Global Tech Solutions', 'John Smith', 'john@globaltech.com', '123-456-7890', '789 Tech Hub', 1]);
+    await db.run('INSERT INTO suppliers (name, contact_person, email, phone, address, state_id) VALUES (?, ?, ?, ?, ?, ?)',
+      ['Industrial Parts Co', 'Sarah Wilson', 'sarah@indparts.com', '555-0199', '456 Factory Lane', 3]);
 
     // Sample Sales
     await db.run('INSERT INTO sales (customer_id, total_amount, tax_amount) VALUES (?, ?, ?)', [1, 2400, 432]);
@@ -274,15 +367,15 @@ async function startServer() {
       [3, 50, 'Pending', '2026-03-25']);
 
     // Sample Masters
-    await db.run('INSERT INTO countries (name, code) VALUES (?, ?)', ['United States', 'US']);
     await db.run('INSERT INTO countries (name, code) VALUES (?, ?)', ['India', 'IN']);
-    await db.run('INSERT INTO states (name, country_id) VALUES (?, ?)', ['California', 1]);
-    await db.run('INSERT INTO states (name, country_id) VALUES (?, ?)', ['Maharashtra', 2]);
-    await db.run('INSERT INTO cities (name, state_id) VALUES (?, ?)', ['Los Angeles', 1]);
-    await db.run('INSERT INTO cities (name, state_id) VALUES (?, ?)', ['Mumbai', 2]);
+    await db.run('INSERT INTO states (name, country_id) VALUES (?, ?)', ['Maharashtra', 1]);
+    await db.run('INSERT INTO states (name, country_id) VALUES (?, ?)', ['Gujarat', 1]);
+    await db.run('INSERT INTO states (name, country_id) VALUES (?, ?)', ['Karnataka', 1]);
+    await db.run('INSERT INTO cities (name, state_id) VALUES (?, ?)', ['Mumbai', 1]);
+    await db.run('INSERT INTO cities (name, state_id) VALUES (?, ?)', ['Ahmedabad', 2]);
     await db.run('INSERT INTO units (name, short_name) VALUES (?, ?)', ['Pieces', 'pcs']);
     await db.run('INSERT INTO units (name, short_name) VALUES (?, ?)', ['Kilograms', 'kg']);
-    await db.run('INSERT INTO taxes (name, rate, description) VALUES (?, ?, ?)', ['VAT 18%', 18, 'Standard VAT']);
+    await db.run('INSERT INTO taxes (name, rate, description) VALUES (?, ?, ?)', ['GST 18%', 18, 'Standard GST']);
     await db.run('INSERT INTO accounts (name, type, balance) VALUES (?, ?, ?)', ['Cash Account', 'Asset', 5000]);
   }
 
@@ -512,69 +605,288 @@ async function startServer() {
     }
   });
 
+  // Settings API
+  app.get('/api/settings', authenticateToken, async (req, res) => {
+    const settings = await db.all('SELECT * FROM settings');
+    const settingsMap = settings.reduce((acc: any, s: any) => {
+      acc[s.key] = s.value;
+      return acc;
+    }, {});
+    res.json(settingsMap);
+  });
+
+  // Detailed Sale Orders API
+  app.get('/api/sale_orders', authenticateToken, async (req, res) => {
+    try {
+      const orders = await db.all(`
+        SELECT so.*, c.name as customer_name, c.state_id as customer_state_id
+        FROM sale_orders so
+        LEFT JOIN customers c ON so.customer_id = c.id
+        ORDER BY so.date DESC
+      `);
+      
+      for (const order of orders) {
+        const items = await db.all(`
+          SELECT soi.*, p.name as product_name, p.sku as product_sku, p.unit as product_unit
+          FROM sale_order_items soi
+          JOIN products p ON soi.product_id = p.id
+          WHERE soi.sale_order_id = ?
+        `, [order.id]);
+        order.items = items;
+      }
+      res.json(orders);
+    } catch (e: any) {
+      console.error('Error fetching sale orders:', e);
+      res.status(500).json({ message: e.message || 'Error fetching sale orders' });
+    }
+  });
+
+  app.post('/api/sale_orders', authenticateToken, async (req, res) => {
+    const { 
+      order_no, date, customer_id, items, total_amount, discount_total, tax_total, 
+      cgst_total, sgst_total, igst_total, grand_total, status,
+      order_effective_from, order_effective_till, amendment_date, amendment_effective_date
+    } = req.body;
+    try {
+      const result = await db.run(`
+        INSERT INTO sale_orders (
+          order_no, date, customer_id, total_amount, discount_total, tax_total, 
+          cgst_total, sgst_total, igst_total, grand_total, status,
+          order_effective_from, order_effective_till, amendment_date, amendment_effective_date
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        order_no, date, customer_id, total_amount, discount_total, tax_total, 
+        cgst_total, sgst_total, igst_total, grand_total, status || 'Pending',
+        order_effective_from, order_effective_till, amendment_date, amendment_effective_date
+      ]);
+      
+      const orderId = result.lastID;
+      for (const item of items) {
+        await db.run(`
+          INSERT INTO sale_order_items (sale_order_id, product_id, quantity, unit_price, discount, hsn_sac, cgst_rate, sgst_rate, igst_rate, cgst_amount, sgst_amount, igst_amount, amount)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [orderId, item.product_id, item.quantity, item.unit_price, item.discount, item.hsn_sac, item.cgst_rate, item.sgst_rate, item.igst_rate, item.cgst_amount, item.sgst_amount, item.igst_amount, item.amount]);
+      }
+      res.status(201).json({ id: orderId });
+    } catch (e: any) {
+      console.error('Error creating sale order:', e);
+      res.status(400).json({ message: e.message || 'Error creating sale order' });
+    }
+  });
+
+  app.put('/api/sale_orders/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const { 
+      order_no, date, customer_id, items, total_amount, discount_total, tax_total, 
+      cgst_total, sgst_total, igst_total, grand_total, status,
+      order_effective_from, order_effective_till, amendment_date, amendment_effective_date
+    } = req.body;
+    try {
+      await db.run(`
+        UPDATE sale_orders SET
+          order_no = ?, date = ?, customer_id = ?, total_amount = ?, discount_total = ?, tax_total = ?, 
+          cgst_total = ?, sgst_total = ?, igst_total = ?, grand_total = ?, status = ?,
+          order_effective_from = ?, order_effective_till = ?, amendment_date = ?, amendment_effective_date = ?
+        WHERE id = ?
+      `, [
+        order_no, date, customer_id, total_amount, discount_total, tax_total, 
+        cgst_total, sgst_total, igst_total, grand_total, status,
+        order_effective_from, order_effective_till, amendment_date, amendment_effective_date,
+        id
+      ]);
+      
+      // Replace items
+      await db.run('DELETE FROM sale_order_items WHERE sale_order_id = ?', [id]);
+      for (const item of items) {
+        await db.run(`
+          INSERT INTO sale_order_items (sale_order_id, product_id, quantity, unit_price, discount, hsn_sac, cgst_rate, sgst_rate, igst_rate, cgst_amount, sgst_amount, igst_amount, amount)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [id, item.product_id, item.quantity, item.unit_price, item.discount, item.hsn_sac, item.cgst_rate, item.sgst_rate, item.igst_rate, item.cgst_amount, item.sgst_amount, item.igst_amount, item.amount]);
+      }
+      res.json({ message: 'Sale order updated' });
+    } catch (e: any) {
+      console.error('Error updating sale order:', e);
+      res.status(400).json({ message: e.message || 'Error updating sale order' });
+    }
+  });
+
+  app.delete('/api/sale_orders/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+      await db.run('DELETE FROM sale_order_items WHERE sale_order_id = ?', [id]);
+      await db.run('DELETE FROM sale_orders WHERE id = ?', [id]);
+      res.json({ message: 'Sale order deleted' });
+    } catch (e: any) {
+      console.error('Error deleting sale order:', e);
+      res.status(400).json({ message: e.message || 'Error deleting sale order' });
+    }
+  });
+
+  // Detailed Purchase Orders API
+  app.get('/api/purchase_orders', authenticateToken, async (req, res) => {
+    try {
+      const orders = await db.all(`
+        SELECT po.*, s.name as supplier_name, s.state_id as supplier_state_id
+        FROM purchase_orders po
+        LEFT JOIN suppliers s ON po.supplier_id = s.id
+        ORDER BY po.date DESC
+      `);
+      
+      for (const order of orders) {
+        const items = await db.all(`
+          SELECT poi.*, p.name as product_name, p.sku as product_sku, p.unit as product_unit
+          FROM purchase_order_items poi
+          JOIN products p ON poi.product_id = p.id
+          WHERE poi.purchase_order_id = ?
+        `, [order.id]);
+        order.items = items;
+      }
+      res.json(orders);
+    } catch (e: any) {
+      console.error('Error fetching purchase orders:', e);
+      res.status(500).json({ message: e.message || 'Error fetching purchase orders' });
+    }
+  });
+
+  app.post('/api/purchase_orders', authenticateToken, async (req, res) => {
+    const { 
+      order_no, date, supplier_id, items, total_amount, discount_total, tax_total, 
+      cgst_total, sgst_total, igst_total, grand_total, status,
+      order_effective_from, order_effective_till, amendment_date, amendment_effective_date
+    } = req.body;
+    try {
+      const result = await db.run(`
+        INSERT INTO purchase_orders (
+          order_no, date, supplier_id, total_amount, discount_total, tax_total, 
+          cgst_total, sgst_total, igst_total, grand_total, status,
+          order_effective_from, order_effective_till, amendment_date, amendment_effective_date
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        order_no, date, supplier_id, total_amount, discount_total, tax_total, 
+        cgst_total, sgst_total, igst_total, grand_total, status || 'Pending',
+        order_effective_from, order_effective_till, amendment_date, amendment_effective_date
+      ]);
+      
+      const orderId = result.lastID;
+      for (const item of items) {
+        await db.run(`
+          INSERT INTO purchase_order_items (purchase_order_id, product_id, quantity, unit_price, discount, hsn_sac, cgst_rate, sgst_rate, igst_rate, cgst_amount, sgst_amount, igst_amount, amount)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [orderId, item.product_id, item.quantity, item.unit_price, item.discount, item.hsn_sac, item.cgst_rate, item.sgst_rate, item.igst_rate, item.cgst_amount, item.sgst_amount, item.igst_amount, item.amount]);
+      }
+      res.status(201).json({ id: orderId });
+    } catch (e: any) {
+      console.error('Error creating purchase order:', e);
+      res.status(400).json({ message: e.message || 'Error creating purchase order' });
+    }
+  });
+
+  app.put('/api/purchase_orders/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const { 
+      order_no, date, supplier_id, items, total_amount, discount_total, tax_total, 
+      cgst_total, sgst_total, igst_total, grand_total, status,
+      order_effective_from, order_effective_till, amendment_date, amendment_effective_date
+    } = req.body;
+    try {
+      await db.run(`
+        UPDATE purchase_orders SET
+          order_no = ?, date = ?, supplier_id = ?, total_amount = ?, discount_total = ?, tax_total = ?, 
+          cgst_total = ?, sgst_total = ?, igst_total = ?, grand_total = ?, status = ?,
+          order_effective_from = ?, order_effective_till = ?, amendment_date = ?, amendment_effective_date = ?
+        WHERE id = ?
+      `, [
+        order_no, date, supplier_id, total_amount, discount_total, tax_total, 
+        cgst_total, sgst_total, igst_total, grand_total, status,
+        order_effective_from, order_effective_till, amendment_date, amendment_effective_date,
+        id
+      ]);
+      
+      // Replace items
+      await db.run('DELETE FROM purchase_order_items WHERE purchase_order_id = ?', [id]);
+      for (const item of items) {
+        await db.run(`
+          INSERT INTO purchase_order_items (purchase_order_id, product_id, quantity, unit_price, discount, hsn_sac, cgst_rate, sgst_rate, igst_rate, cgst_amount, sgst_amount, igst_amount, amount)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [id, item.product_id, item.quantity, item.unit_price, item.discount, item.hsn_sac, item.cgst_rate, item.sgst_rate, item.igst_rate, item.cgst_amount, item.sgst_amount, item.igst_amount, item.amount]);
+      }
+      res.json({ message: 'Purchase order updated' });
+    } catch (e: any) {
+      console.error('Error updating purchase order:', e);
+      res.status(400).json({ message: e.message || 'Error updating purchase order' });
+    }
+  });
+
+  app.delete('/api/purchase_orders/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+      await db.run('DELETE FROM purchase_order_items WHERE purchase_order_id = ?', [id]);
+      await db.run('DELETE FROM purchase_orders WHERE id = ?', [id]);
+      res.json({ message: 'Purchase order deleted' });
+    } catch (e: any) {
+      console.error('Error deleting purchase order:', e);
+      res.status(400).json({ message: e.message || 'Error deleting purchase order' });
+    }
+  });
+
   // Generic Master API
   const masters = [
     'accounts', 'taxes', 'countries', 'states', 'cities', 'units', 
-    'gate_entries', 'mrn', 'sale_orders', 'sale_schedules', 
-    'purchase_orders', 'purchase_schedules', 'production_entries',
+    'gate_entries', 'mrn', 'sale_schedules', 
+    'purchase_schedules', 'production_entries',
     'suppliers', 'customers'
   ];
   masters.forEach(master => {
     app.get(`/api/${master}`, authenticateToken, async (req, res) => {
-      let query = `SELECT * FROM ${master}`;
-      if (master === 'states') query = `SELECT s.*, c.name as country_name FROM states s JOIN countries c ON s.country_id = c.id`;
-      if (master === 'cities') query = `SELECT ci.*, st.name as state_name FROM cities ci JOIN states st ON ci.state_id = st.id`;
-      if (master === 'mrn') {
-        query = `
-          SELECT m.*, ge.entry_no as gate_entry_no, s.name as supplier_name, p.name as product_name 
-          FROM mrn m
-          LEFT JOIN gate_entries ge ON m.gate_entry_id = ge.id
-          LEFT JOIN suppliers s ON m.supplier_id = s.id
-          LEFT JOIN products p ON m.product_id = p.id
-        `;
-      } else if (master === 'gate_entries') {
-        query = `
-          SELECT ge.*, s.name as supplier_name 
-          FROM gate_entries ge
-          LEFT JOIN suppliers s ON ge.supplier_id = s.id
-        `;
-      } else if (master === 'sale_orders') {
-        query = `
-          SELECT so.*, c.name as customer_name 
-          FROM sale_orders so
-          LEFT JOIN customers c ON so.customer_id = c.id
-        `;
-      } else if (master === 'sale_schedules') {
-        query = `
-          SELECT ss.*, so.order_no, p.name as product_name 
-          FROM sale_schedules ss
-          LEFT JOIN sale_orders so ON ss.sale_order_id = so.id
-          LEFT JOIN products p ON ss.product_id = p.id
-        `;
-      } else if (master === 'purchase_orders') {
-        query = `
-          SELECT po.*, s.name as supplier_name 
-          FROM purchase_orders po
-          LEFT JOIN suppliers s ON po.supplier_id = s.id
-        `;
-      } else if (master === 'purchase_schedules') {
-        query = `
-          SELECT ps.*, po.order_no, p.name as product_name 
-          FROM purchase_schedules ps
-          LEFT JOIN purchase_orders po ON ps.purchase_order_id = po.id
-          LEFT JOIN products p ON ps.product_id = p.id
-        `;
-      } else if (master === 'production_entries') {
-        query = `
-          SELECT pe.*, po.id as production_order_id, p.name as product_name 
-          FROM production_entries pe
-          LEFT JOIN production_orders po ON pe.production_order_id = po.id
-          LEFT JOIN products p ON pe.product_id = p.id
-        `;
+      try {
+        let query = `SELECT * FROM ${master}`;
+        if (master === 'states') query = `SELECT s.*, c.name as country_name FROM states s JOIN countries c ON s.country_id = c.id`;
+        if (master === 'cities') query = `SELECT ci.*, st.name as state_name FROM cities ci JOIN states st ON ci.state_id = st.id`;
+        if (master === 'mrn') {
+          query = `
+            SELECT m.*, ge.entry_no as gate_entry_no, s.name as supplier_name, p.name as product_name 
+            FROM mrn m
+            LEFT JOIN gate_entries ge ON m.gate_entry_id = ge.id
+            LEFT JOIN suppliers s ON m.supplier_id = s.id
+            LEFT JOIN products p ON m.product_id = p.id
+          `;
+        } else if (master === 'gate_entries') {
+          query = `
+            SELECT ge.*, s.name as supplier_name 
+            FROM gate_entries ge
+            LEFT JOIN suppliers s ON ge.supplier_id = s.id
+          `;
+        } else if (master === 'sale_schedules') {
+          query = `
+            SELECT ss.*, so.order_no, p.name as product_name 
+            FROM sale_schedules ss
+            LEFT JOIN sale_orders so ON ss.sale_order_id = so.id
+            LEFT JOIN products p ON ss.product_id = p.id
+          `;
+        } else if (master === 'purchase_schedules') {
+          query = `
+            SELECT ps.*, po.order_no, p.name as product_name 
+            FROM purchase_schedules ps
+            LEFT JOIN purchase_orders po ON ps.purchase_order_id = po.id
+            LEFT JOIN products p ON ps.product_id = p.id
+          `;
+        } else if (master === 'production_entries') {
+          query = `
+            SELECT pe.*, po.id as production_order_id, p.name as product_name 
+            FROM production_entries pe
+            LEFT JOIN production_orders po ON pe.production_order_id = po.id
+            LEFT JOIN products p ON pe.product_id = p.id
+          `;
+        }
+        
+        const data = await db.all(query);
+        res.json(data);
+      } catch (e: any) {
+        console.error(`Error fetching ${master}:`, e);
+        res.status(500).json({ message: e.message || `Error fetching ${master}` });
       }
-      
-      const data = await db.all(query);
-      res.json(data);
     });
 
     app.post(`/api/${master}`, authenticateToken, async (req, res) => {
@@ -584,8 +896,9 @@ async function startServer() {
       try {
         await db.run(`INSERT INTO ${master} (${keys.join(',')}) VALUES (${placeholders})`, values);
         res.status(201).json({ message: `${master} created` });
-      } catch (e) {
-        res.status(400).json({ message: `Error creating ${master}` });
+      } catch (e: any) {
+        console.error(`Error creating ${master}:`, e);
+        res.status(400).json({ message: e.message || `Error creating ${master}` });
       }
     });
 
@@ -596,8 +909,9 @@ async function startServer() {
       try {
         await db.run(`UPDATE ${master} SET ${setClause} WHERE id=?`, [...values, req.params.id]);
         res.json({ message: `${master} updated` });
-      } catch (e) {
-        res.status(400).json({ message: `Error updating ${master}` });
+      } catch (e: any) {
+        console.error(`Error updating ${master}:`, e);
+        res.status(400).json({ message: e.message || `Error updating ${master}` });
       }
     });
 
@@ -605,8 +919,9 @@ async function startServer() {
       try {
         await db.run(`DELETE FROM ${master} WHERE id=?`, [req.params.id]);
         res.json({ message: `${master} deleted` });
-      } catch (e) {
-        res.status(400).json({ message: `Error deleting ${master}` });
+      } catch (e: any) {
+        console.error(`Error deleting ${master}:`, e);
+        res.status(400).json({ message: e.message || `Error deleting ${master}` });
       }
     });
   });

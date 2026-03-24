@@ -34,7 +34,7 @@ export default function GenericMaster({ endpoint, title, fields }: { endpoint: s
   useEffect(() => {
     fetchData();
     fetchOptions();
-  }, [endpoint]);
+  }, [endpoint, fields]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -203,7 +203,11 @@ export default function GenericMaster({ endpoint, title, fields }: { endpoint: s
                             {typeof o === 'object' ? o.name : o}
                           </option>
                         )) : null}
-                        {field.optionsEndpoint ? optionsData[field.name]?.map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>) : null}
+                        {field.optionsEndpoint ? optionsData[field.name]?.map((o: any) => (
+                          <option key={o.id} value={o.id}>
+                            {o.name || o.order_no || o.entry_no || o.order_number || o.id}
+                          </option>
+                        )) : null}
                       </select>
                     ) : (
                       <input

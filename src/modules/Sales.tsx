@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
-import GenericMaster from '../components/GenericMaster';
+import { OrderManagement } from '../components/OrderManagement';
+import { ScheduleManagement } from '../components/ScheduleManagement';
 
 export default function Sales() {
   const [activeTab, setActiveTab] = useState<'invoices' | 'sale_orders' | 'sale_schedules'>('invoices');
@@ -373,31 +374,11 @@ export default function Sales() {
         )}
 
         {activeTab === 'sale_orders' && (
-          <GenericMaster 
-            endpoint="sale_orders" 
-            title="Sale Order" 
-            fields={[
-              { name: 'order_no', label: 'Order No', type: 'text', required: true },
-              { name: 'date', label: 'Date', type: 'date', required: true },
-              { name: 'customer_id', label: 'Customer', type: 'select', optionsEndpoint: '/customers', required: true, displayField: 'customer_name' },
-              { name: 'total_amount', label: 'Total Amount (₹)', type: 'number' },
-              { name: 'status', label: 'Status', type: 'select', options: ['Draft', 'Confirmed', 'Shipped', 'Delivered'] }
-            ]} 
-          />
+          <OrderManagement type="sale" />
         )}
 
         {activeTab === 'sale_schedules' && (
-          <GenericMaster 
-            endpoint="sale_schedules" 
-            title="Sale Schedule" 
-            fields={[
-              { name: 'sale_order_id', label: 'Sale Order', type: 'select', optionsEndpoint: '/sale_orders', required: true, displayField: 'order_no' },
-              { name: 'product_id', label: 'Product', type: 'select', optionsEndpoint: '/products', required: true, displayField: 'product_name' },
-              { name: 'scheduled_date', label: 'Scheduled Date', type: 'date', required: true },
-              { name: 'quantity', label: 'Quantity', type: 'number', required: true },
-              { name: 'status', label: 'Status', type: 'select', options: ['Scheduled', 'In Transit', 'Delivered'] }
-            ]} 
-          />
+          <ScheduleManagement type="sale" />
         )}
       </div>
     </div>

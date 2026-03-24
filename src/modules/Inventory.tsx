@@ -29,7 +29,8 @@ export default function Inventory() {
     unit: 'pcs',
     price: 0,
     stock: 0,
-    min_stock: 10
+    min_stock: 10,
+    hsn_sac: ''
   });
 
   useEffect(() => {
@@ -61,7 +62,8 @@ export default function Inventory() {
         unit: 'pcs',
         price: 0,
         stock: 0,
-        min_stock: 10
+        min_stock: 10,
+        hsn_sac: ''
       });
       fetchProducts();
     } catch (e) {
@@ -203,6 +205,25 @@ export default function Inventory() {
                             type="number"
                             value={newProduct.stock}
                             onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) })}
+                            className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-slate-700">Unit</label>
+                          <input
+                            required
+                            type="text"
+                            value={newProduct.unit}
+                            onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
+                            className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-slate-700">HSN/SAC</label>
+                          <input
+                            type="text"
+                            value={newProduct.hsn_sac}
+                            onChange={(e) => setNewProduct({ ...newProduct, hsn_sac: e.target.value })}
                             className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
                           />
                         </div>

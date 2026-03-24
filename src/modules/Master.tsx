@@ -76,13 +76,16 @@ export default function Master() {
           { name: 'name', label: 'Customer Name', type: 'text', required: true },
           { name: 'email', label: 'Email', type: 'email' },
           { name: 'phone', label: 'Phone', type: 'text' },
-          { name: 'address', label: 'Address', type: 'text' }
+          { name: 'address', label: 'Address', type: 'text' },
+          { name: 'state_id', label: 'State', type: 'select', optionsEndpoint: '/states', required: true }
         ]} />}
         {activeSubTab === 'suppliers' && <GenericMaster endpoint="/suppliers" title="Supplier" fields={[
           { name: 'name', label: 'Supplier Name', type: 'text', required: true },
           { name: 'contact_person', label: 'Contact Person', type: 'text' },
           { name: 'email', label: 'Email', type: 'email' },
-          { name: 'phone', label: 'Phone', type: 'text' }
+          { name: 'phone', label: 'Phone', type: 'text' },
+          { name: 'address', label: 'Address', type: 'text' },
+          { name: 'state_id', label: 'State', type: 'select', optionsEndpoint: '/states', required: true }
         ]} />}
         {activeSubTab === 'accounts' && <GenericMaster endpoint="/accounts" title="Account" fields={[
           { name: 'name', label: 'Account Name', type: 'text', required: true },
@@ -130,7 +133,7 @@ function ItemMaster() {
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view' | null>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [formData, setFormData] = useState<any>({
-    name: '', sku: '', category: 'Raw Material', unit: 'pcs', price: 0, stock: 0, min_stock: 10
+    name: '', sku: '', category: 'Raw Material', unit: 'pcs', price: 0, stock: 0, min_stock: 10, hsn_sac: ''
   });
 
   useEffect(() => {
@@ -177,7 +180,7 @@ function ItemMaster() {
   const openModal = (mode: 'add' | 'edit' | 'view', item?: any) => {
     setModalMode(mode);
     setSelectedItem(item || null);
-    setFormData(item || { name: '', sku: '', category: 'Raw Material', unit: 'pcs', price: 0, stock: 0, min_stock: 10 });
+    setFormData(item || { name: '', sku: '', category: 'Raw Material', unit: 'pcs', price: 0, stock: 0, min_stock: 10, hsn_sac: '' });
   };
 
   return (
@@ -310,6 +313,16 @@ function ItemMaster() {
                   type="number"
                   value={formData.min_stock}
                   onChange={e => setFormData({...formData, min_stock: Number(e.target.value)})}
+                  className="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:ring-indigo-500 disabled:opacity-60"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase text-slate-500">HSN/SAC</label>
+                <input
+                  disabled={modalMode === 'view'}
+                  type="text"
+                  value={formData.hsn_sac}
+                  onChange={e => setFormData({...formData, hsn_sac: e.target.value})}
                   className="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:ring-indigo-500 disabled:opacity-60"
                 />
               </div>

@@ -5,7 +5,8 @@ import {
   ClipboardList,
   Plus
 } from 'lucide-react';
-import GenericMaster from '../components/GenericMaster';
+import { OrderManagement } from '../components/OrderManagement';
+import { ScheduleManagement } from '../components/ScheduleManagement';
 
 export default function Purchase() {
   const [activeTab, setActiveTab] = useState<'orders' | 'schedules'>('orders');
@@ -44,39 +45,9 @@ export default function Purchase() {
       </div>
 
       {activeTab === 'orders' ? (
-        <GenericMaster
-          endpoint="purchase_orders"
-          title="Purchase Order"
-          fields={[
-            { name: 'order_number', label: 'PO Number', type: 'text', required: true },
-            { name: 'order_date', label: 'Order Date', type: 'date', required: true },
-            { name: 'supplier_id', label: 'Supplier', type: 'select', required: true, optionsEndpoint: 'suppliers' },
-            { name: 'product_id', label: 'Product', type: 'select', required: true, optionsEndpoint: 'products' },
-            { name: 'quantity', label: 'Quantity', type: 'number', required: true },
-            { name: 'unit_price', label: 'Unit Price (₹)', type: 'number', required: true },
-            { name: 'status', label: 'Status', type: 'select', required: true, options: [
-              { id: 'Draft', name: 'Draft' },
-              { id: 'Sent', name: 'Sent' },
-              { id: 'Received', name: 'Received' },
-              { id: 'Cancelled', name: 'Cancelled' }
-            ]}
-          ]}
-        />
+        <OrderManagement type="purchase" />
       ) : (
-        <GenericMaster
-          endpoint="purchase_schedules"
-          title="Purchase Schedule"
-          fields={[
-            { name: 'purchase_order_id', label: 'Purchase Order', type: 'select', required: true, optionsEndpoint: 'purchase_orders' },
-            { name: 'delivery_date', label: 'Delivery Date', type: 'date', required: true },
-            { name: 'quantity', label: 'Quantity', type: 'number', required: true },
-            { name: 'status', label: 'Status', type: 'select', required: true, options: [
-              { id: 'Pending', name: 'Pending' },
-              { id: 'Delivered', name: 'Delivered' },
-              { id: 'Delayed', name: 'Delayed' }
-            ]}
-          ]}
-        />
+        <ScheduleManagement type="purchase" />
       )}
     </div>
   );
