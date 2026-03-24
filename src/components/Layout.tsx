@@ -160,7 +160,7 @@ export default function Layout({ children, activeTab, setActiveTab }: LayoutProp
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-4">
           <motion.div
             key={activeTab}
             initial={{ opacity: 0, y: 10 }}

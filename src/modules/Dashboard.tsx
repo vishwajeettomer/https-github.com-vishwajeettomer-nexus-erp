@@ -58,48 +58,48 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard Overview</h1>
+        <h1 className="text-xl font-bold text-slate-900">Dashboard Overview</h1>
         <div className="flex gap-2">
-          <button className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">
+          <button className="rounded-xl bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">
             Last 30 Days
           </button>
-          <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-indigo-700">
+          <button className="rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-md hover:bg-indigo-700">
             Export Report
           </button>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, i) => (
-          <div key={i} className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
+          <div key={i} className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
             <div className="flex items-start justify-between">
-              <div className={cn("rounded-xl p-3", stat.bg)}>
-                <stat.icon className={stat.color} size={24} />
+              <div className={cn("rounded-lg p-2", stat.bg)}>
+                <stat.icon className={stat.color} size={20} />
               </div>
               <div className={cn(
-                "flex items-center gap-1 text-xs font-bold",
+                "flex items-center gap-1 text-[10px] font-bold",
                 stat.trendUp ? "text-emerald-600" : "text-amber-600"
               )}>
-                {stat.trendUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                {stat.trendUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                 {stat.trend}
               </div>
             </div>
-            <div className="mt-4">
-              <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-              <h3 className="mt-1 text-2xl font-bold text-slate-900">{stat.value}</h3>
+            <div className="mt-3">
+              <p className="text-xs font-medium text-slate-500">{stat.label}</p>
+              <h3 className="mt-0.5 text-xl font-bold text-slate-900">{stat.value}</h3>
             </div>
           </div>
         ))}
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h3 className="mb-6 text-lg font-bold text-slate-900">Sales Performance</h3>
-          <div className="h-[300px] w-full">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <h3 className="mb-2 text-sm font-bold text-slate-900">Sales Performance</h3>
+          <div className="h-[220px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data}>
                 <defs>
@@ -109,30 +109,30 @@ export default function Dashboard() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} dy={5} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
                 />
-                <Area type="monotone" dataKey="sales" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                <Area type="monotone" dataKey="sales" stroke="#4f46e5" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h3 className="mb-6 text-lg font-bold text-slate-900">Production vs Sales</h3>
-          <div className="h-[300px] w-full">
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <h3 className="mb-2 text-sm font-bold text-slate-900">Production vs Sales</h3>
+          <div className="h-[220px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} dy={5} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
                 />
-                <Bar dataKey="sales" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={20} />
-                <Bar dataKey="production" fill="#e2e8f0" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="sales" fill="#4f46e5" radius={[2, 2, 0, 0]} barSize={16} />
+                <Bar dataKey="production" fill="#e2e8f0" radius={[2, 2, 0, 0]} barSize={16} />
               </BarChart>
             </ResponsiveContainer>
           </div>
